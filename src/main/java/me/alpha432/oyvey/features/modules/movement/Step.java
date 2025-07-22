@@ -1,36 +1,49 @@
 package me.alpha432.oyvey.features.modules.movement;
 
 import me.alpha432.oyvey.features.modules.Module;
-import me.alpha432.oyvey.features.settings.Setting;
-import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 
 public class Step extends Module {
-    private final Setting<Float> height = num("Height", 2f, 1f, 3f);
+    private final MinecraftClient mc = MinecraftClient.getInstance();
+    private boolean stepping = false;
 
     public Step() {
-        super("Step", "step..", Category.MOVEMENT, true, false, false);
+        super("Step", Category.MOVEMENT, "Allows you to step up blocks safely.");
     }
 
-    private float prev;
-
     @Override
-    public void onEnable() {
-        if (nullCheck()) {
-            prev = 0.6f;
-            return;
+    public void onTick() {
+        if (mc.player == null || mc.world == null) return;
+        if (!mc.player.isOnGround() || mc.player.isSneaking()) return;
+        if (mc.player.isTouchingWater() || mc.player.isInLava() || mc.player.isClimbing()) return;
+
+        Vec3d vel = mc.player.getVelocity();
+        BlockPos pos = mc.player.getBlockPos();
+
+        // Check for step opportunity
+        if (mc.player.horizontalCollision && canStep(pos)) {
+            doStep();
         }
-        prev = mc.player.getStepHeight();
+
+        // Reset flag after stepping
+        if (stepping && mc.player.getY() % 1 == 0) {
+            stepping = false;
+        }
     }
 
-    @Override
-    public void onDisable() {
-        if (nullCheck()) return;
-        mc.player.getAttributeInstance(EntityAttributes.STEP_HEIGHT).setBaseValue(prev);
+    private boolean canStep(BlockPos pos) {
+        BlockPos head = pos.up();
+        BlockPos aboveHead = pos.up(2);
+
+        return mc.world.getBlockState(head).isAir() &&
+               mc.world.getBlockState(aboveHead).isAir();
     }
 
-    @Override
-    public void onUpdate() {
-        if (nullCheck()) return;
-        mc.player.getAttributeInstance(EntityAttributes.STEP_HEIGHT).setBaseValue(height.getValue());
+    private void doStep() {
+        // Simulate vanilla step (split into multiple Y motions)
+        mc.player.setVelocity(mc.player.getVelocity().x, 0.42f, mc.player.getVelocity().z); // Stage 1
+        stepping = true;
     }
 }
