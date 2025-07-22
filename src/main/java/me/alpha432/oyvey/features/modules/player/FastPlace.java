@@ -1,19 +1,22 @@
-package me.alpha432.oyvey.features.modules.player;
+package me.alpha432.oyvey.features.modules.combat;
 
 import me.alpha432.oyvey.features.modules.Module;
-import net.minecraft.item.Items;
+import net.minecraft.client.MinecraftClient;
 
 public class FastPlace extends Module {
+    private final MinecraftClient mc = MinecraftClient.getInstance();
+
     public FastPlace() {
-        super("FastPlace", "Makes you throw exp faster", Category.PLAYER, true, false, false);
+        super("FastPlace", Category.COMBAT, "Places blocks/items faster.");
     }
 
     @Override
-    public void onUpdate() {
-        if (nullCheck()) return;
+    public void onTick() {
+        if (mc.player == null || mc.interactionManager == null) return;
 
-        if (mc.player.isHolding(Items.EXPERIENCE_BOTTLE)) {
-            mc.itemUseCooldown = 0;
+        // Safe method: resets delay only if holding usable item
+        if (mc.player.getMainHandStack().getItem().getMaxUseTime() <= 0) {
+            mc.itemUseCooldown = 0; // resets delay between uses (safe method)
         }
     }
 }
