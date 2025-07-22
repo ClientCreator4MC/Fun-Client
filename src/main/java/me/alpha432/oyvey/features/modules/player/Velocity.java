@@ -1,19 +1,25 @@
-package me.alpha432.oyvey.features.modules.player;
+package me.alpha432.oyvey.features.modules.combat;
 
-import com.google.common.eventbus.Subscribe;
-import me.alpha432.oyvey.event.impl.PacketEvent;
 import me.alpha432.oyvey.features.modules.Module;
-import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.ExplosionS2CPacket;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.util.math.Vec3d;
 
 public class Velocity extends Module {
+    private final MinecraftClient mc = MinecraftClient.getInstance();
+
     public Velocity() {
-        super("Velocity", "Removes velocity from explosions and entities", Category.PLAYER, true, false, false);
+        super("Velocity", Category.COMBAT, "Reduces or cancels knockback.");
     }
 
-    @Subscribe
-    private void onPacketReceive(PacketEvent.Receive event) {
-        if (event.getPacket() instanceof EntityVelocityUpdateS2CPacket || event.getPacket() instanceof ExplosionS2CPacket)
-            event.cancel();
+    @Override
+    public void onTick() {
+        if (mc.player == null) return;
+
+        if (mc.player.hurtTime > 0) {
+            // Modify velocity after being hit
+            Vec3d vel = mc.player.getVelocity();
+            mc.player.setVelocity(vel.x * 0.05, vel.y * 0.0, vel.z * 0.05);
+        }
     }
 }
